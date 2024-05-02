@@ -1,0 +1,30 @@
+function [y, EndTime] = FindSignalStop(x, fs)
+    % Constants
+    window = 256; % window size for STFT
+    noverlap = 128; % overlap length for STFT
+    nfft = 512; % number of DFT points for STFT
+
+    % Flip the signal
+    x_flipped = flipud(x);
+
+    % Compute the spectrogram for the flipped signal
+    [S, F, T] = spectrogram(x_flipped, window, noverlap, nfft, fs);
+
+    % Calculate the energy of the signal in frequency domain for each time bin
+    Energy = sum(abs(S).^2, 1);
+
+    % Define a threshold to find when the speech ends in the flipped signal
+    threshold = 0.1 * max(Energy); % 10% of the maximum energy
+
+    % Use the 'find' function to get the first time where the energy exceeds the threshold
+    index = find(Energy > threshold, 1, 'first');
+
+    % Calculate the end time in seconds for the flipped signal
+    EndTime_flipped = T(index);
+
+    % Convert this to the original signal's time frame
+    EndTime = length(x) / fs - EndTime_flipped;
+
+    % Get the speech signal up to that point
+    y = x(1:round(EndTime * fs));
+end

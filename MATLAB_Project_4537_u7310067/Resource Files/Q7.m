@@ -1,0 +1,139 @@
+% Read the original music signal
+[music_signal, fs] = audioread('DSP_Music.wav');
+music_signal = music_signal(:, 1);  % Use only the first channel
+
+% Generate the modulating sine wave
+f_sine = 9000;  % Frequency of the sine wave is 9 kHz
+t = 0:1/fs:(length(music_signal)-1)/fs;  % Time vector
+sine_wave = sin(2 * pi * f_sine * t.');
+
+
+% Perform amplitude modulation
+modulated_music = music_signal .* sine_wave;
+% Plot the original music signal in time domain
+figure;
+subplot(3, 2, 1);
+plot(t, music_signal);
+title('Original Music Signal in Time Domain');
+
+% Plot the modulated music signal in time domain
+subplot(3, 2, 2);
+plot(t, modulated_music);
+title('Modulated Music Signal in Time Domain');
+
+% Frequency and Phase Plot for Original Music Signal using embedded dft2
+[original_Xks, freq_vector_original] = dft2(music_signal, fs);
+subplot(3, 2, 3);
+plot(freq_vector_original, abs(original_Xks));
+title('Frequency Domain of Original Music Signal');
+subplot(3, 2, 5);
+phase_original = unwrap(angle(original_Xks));
+plot(freq_vector_original, phase_original);
+title('Unwrapped Phase Response of Original Music Signal');
+
+% Frequency and Phase Plot for Modulated Music Signal using embedded dft2
+[modulated_Xks, freq_vector_modulated] = dft2(modulated_music, fs);
+subplot(3, 2, 4);
+plot(freq_vector_modulated, abs(modulated_Xks));
+title('Frequency Domain of Modulated Music Signal');
+subplot(3, 2, 6);
+phase_modulated = unwrap(angle(modulated_Xks));
+plot(freq_vector_modulated, phase_modulated);
+title('Unwrapped Phase Response of Modulated Music Signal');
+
+
+% Demodulate the signal
+demodulated_signal = modulated_music .* sine_wave;
+
+% Filter Design based on the provided handout and equations
+
+
+
+% 1. Determine the Pass Band Edge Frequency
+fc = 3000;  
+TransitionWidth = 3.44*fs/199;
+f1 = fc + TransitionWidth / 2;
+
+% 2. Calculate the Impulse Response of the Ideal Low Pass Filter
+Omega1 = 2 * pi * f1 / fs;
+n = -198/2:198/2;  % Assuming N = 199
+h1 = Omega1/pi * sinc(Omega1 * n / pi);
+
+% 3. Choose a Suitable Window Function (Hamming window in this case)
+w = hamming(199);  % 200 points for N = 199
+
+% 4. Determine the Impulse Response for the Filter
+h2 = h1 .* w';
+
+% 5. Shift the Impulse Response to Make the Filter Causal
+h = [zeros(1, floor(199/2)) h2];
+
+% Filtering the demodulated signal with the designed filter
+filtered_signal = filter(h, 1, demodulated_signal);
+
+% Compute DFT of filtered signal for plotting using dft2
+[Y_filtered, f_filtered] = dft2(filtered_signal, fs);
+
+% Use fvtool to plot frequency response of the filter
+freqresponse = fvtool(h, 1, demodulated_signal, 'MagnitudeDisplay', 'Magnitude (dB)');
+% Use fvtool to plot frequency response of the filter. Save the handle.
+
+seveneight = fvtool(h, 1, filtered_signal, 'MagnitudeDisplay', 'Magnitude (dB)');
+
+% Save the demodulated music to a WAV file
+audiowrite('Modulated_Music.wav', modulated_music, fs);
+
+% Save the demodulated music to a WAV file
+audiowrite('Demodulated_Music.wav', demodulated_signal, fs);
+
+% Save the filtered demodulated music to a WAV file
+audiowrite('Filtered_Demodulated_Music.wav', filtered_signal, fs);
+
+figure;
+plot(f_filtered, 20 * log10(abs(Y_filtered)));
+hold on;
+
+% Marking Passband edge frequency
+xline(f1, '--', 'Passband edge frequency (transition start)');
+
+% Marking -3dB point
+dB_response = 20 * log10(abs(Y_filtered));
+max_response = max(dB_response);
+minus_3dB_value = max_response - 3;
+index_3dB = find(dB_response <= minus_3dB_value, 1);
+frequency_3dB = f_filtered(index_3dB);
+xline(frequency_3dB, '--', '-3dB Bandwidth');
+
+% Marking stopband attenuation
+[max_val, max_idx] = max(dB_response);
+[min_val, min_idx] = min(dB_response(max_idx:end));
+xline(f_filtered(max_idx + min_idx - 1), '--', '');
+xline(f_filtered(max_idx), '--', '');
+
+% Marking transition width
+transition_start = f1;
+transition_end = f_filtered(max_idx + min_idx - 1);
+xline(transition_start, '--', '');
+xline(transition_end, '--', 'Transition End');
+% Calculations
+stopband_attenuation = max_val - min_val;
+transition_width = transition_end - transition_start;
+
+hold off;
+title('Magnitude response of the filter with marked values');
+xlabel('Frequency (Hz)');
+ylabel('Magnitude (dB)');
+
+
+
+% dft2 function embedded within this script
+function [dft_sig, frequency_vector] = dft2(signal, sample_frequency)
+    N = length(signal);
+    dft_sig = fft(signal);
+    dft_sig = (2/N) * dft_sig;
+    delta_f = sample_frequency / N;
+    frequency_vector = 0:delta_f:sample_frequency/2;
+    N1 = length(frequency_vector);
+    dft_sig = dft_sig(1:N1);
+end
+
