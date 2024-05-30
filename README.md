@@ -1,4 +1,4 @@
-# Digital Signal Processing of Audio Signals Project
+# Digital Signal Processing of Audio Signals in MATLAB
 
 This project, part of the ENGN4537/6537 Digital Signal Processing course at the Australian National University, involves various tasks related to digital signal processing (DSP) of audio signals using MATLAB. The project covers reading and writing audio files, analyzing their properties, applying Fourier Transforms, filtering signals, and more.
 
