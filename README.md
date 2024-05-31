@@ -49,7 +49,7 @@ This project, part of the ENGN4537/6537 Digital Signal Processing course at the 
 - **Spectrograms:** Visualizing the time-varying frequency content of signals.
 - **Modulation:** Applying amplitude modulation and demodulation techniques.
 
-## Files and Submission
+## Files 
 - **Report:** A comprehensive report detailing the approach, implementation, and results for each task.
 - **MATLAB Code:** Scripts and functions used for processing audio signals.
 - **Generated Audio Files:** Processed audio files demonstrating the applied DSP techniques.
